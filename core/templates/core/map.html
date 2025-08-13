@@ -3,49 +3,24 @@
 {% block title %}Family GPS Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="text-center mb-4">Family GPS Tracker</h1>
+<div id="content" style="height: 800px; width: 480px; margin: 0 auto;">
+    <!-- Family Members Status - Top 300px -->
+    <div style="height: 300px; padding: 20px; background-color: white; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6;">
+        {% for location in locations %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <span class="badge bg-primary me-3" style="font-size: 14px;">{{ location.user.first_name|first|upper|default:location.user.username|first|upper }}</span>
+                <strong style="font-size: 18px;">{{ location.user.first_name|default:location.user.username }}</strong>
+            </div>
+            <small class="text-muted" style="font-size: 14px;">{{ location.timestamp|timesince }} ago</small>
         </div>
+        {% empty %}
+        <p class="text-muted text-center mt-5" style="font-size: 16px;">No family members online yet.<br>Start OwnTracks to see locations!</p>
+        {% endfor %}
     </div>
     
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Family Members Online</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for location in locations %}
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center mb-2">
-                                <span class="badge bg-primary me-2">{{ location.user.first_name|first|upper|default:location.user.username|first|upper }}</span>
-                                <strong>{{ location.user.first_name|default:location.user.username }}:</strong>&nbsp;{{ location.latitude|floatformat:4 }}, {{ location.longitude|floatformat:4 }}
-                                <small class="text-muted ms-2">({{ location.timestamp|timesince }} ago)</small>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="col-12">
-                            <p class="text-muted">No family members online yet. Start OwnTracks to see locations!</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body p-0">
-                    <div id="map"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Map - Bottom 500px -->
+    <div id="map" style="height: 500px; border-radius: 8px;"></div>
 </div>
 
 <script>
@@ -88,9 +63,11 @@
         {% endfor %}
     ];
 
-    // Add markers for each family member
+    // Add markers for each family member and collect coordinates
+    var markers = [];
     familyMembers.forEach(function(member) {
         var marker = L.marker([member.lat, member.lng], {icon: member.icon}).addTo(map);
+        markers.push(marker);
         
         marker.bindPopup(`
             <div class="card" style="border: none; min-width: 200px;">
@@ -105,13 +82,10 @@
         `);
     });
 
-    // Add a subtle circle around Denmark region
-    var denmarkCircle = L.circle([55.6761, 12.5683], {
-        color: '#0d6efd',
-        fillColor: '#cfe2ff',
-        fillOpacity: 0.1,
-        radius: 200000,
-        weight: 2
-    }).addTo(map);
+    // Auto-zoom to fit all family members
+    if (markers.length > 0) {
+        var group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds(), {padding: [20, 20]});
+    }
 </script>
 {% endblock %}
