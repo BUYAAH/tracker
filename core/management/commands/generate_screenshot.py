@@ -85,9 +85,21 @@ class Command(BaseCommand):
                 map_exists = driver.execute_script("return document.getElementById('map') !== null;")
                 self.stdout.write(f'Map element exists: {map_exists}')
                 
-                # Give time for map and tiles to load
+                # Give time for map and tiles to load (or fallback to trigger)
                 self.stdout.write('Waiting for map to fully load...')
-                time.sleep(15)
+                time.sleep(8)  # Wait for tile attempts and fallback
+                
+                # Trigger fallback if tiles haven't loaded
+                driver.execute_script("""
+                    var mapElement = document.getElementById('map');
+                    if (!mapElement.querySelector('.leaflet-tile-loaded')) {
+                        mapElement.style.background = 'linear-gradient(90deg, #e6f3ff 50%, #f0f8ff 50%), linear-gradient(#e6f3ff 50%, #f0f8ff 50%)';
+                        mapElement.style.backgroundSize = '20px 20px';
+                        console.log('Applied fallback background for screenshot');
+                    }
+                """)
+                
+                time.sleep(2)  # Wait for fallback to apply
                 
                 # Final JS error check
                 final_errors = driver.get_log('browser')

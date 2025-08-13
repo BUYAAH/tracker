@@ -24,10 +24,27 @@
     // Initialize the map centered on Denmark
     var map = L.map('map').setView([55.6761, 12.5683], 7);
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+    // Try OpenStreetMap tiles with fallback
+    var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=' // 1x1 transparent pixel
     }).addTo(map);
+    
+    // Add a fallback background for when tiles fail
+    map.on('tileerror', function(e) {
+        console.log('Tile failed to load, using fallback');
+        // Set a simple background color for the map container
+        document.getElementById('map').style.backgroundColor = '#e6f3ff';
+    });
+    
+    // After 3 seconds, if no tiles loaded, show a simple background with grid
+    setTimeout(function() {
+        var mapElement = document.getElementById('map');
+        if (!mapElement.querySelector('.leaflet-tile-loaded')) {
+            mapElement.style.background = 'linear-gradient(90deg, #e6f3ff 50%, #f0f8ff 50%), linear-gradient(#e6f3ff 50%, #f0f8ff 50%)';
+            mapElement.style.backgroundSize = '20px 20px';
+        }
+    }, 3000);
 
     // Custom icons for family members
     var momIcon = L.divIcon({
