@@ -24,6 +24,10 @@ class Command(BaseCommand):
             chrome_options.add_argument("--headless")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=480,800")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-web-security")
+            chrome_options.add_argument("--allow-running-insecure-content")
+            chrome_options.add_argument("--ignore-certificate-errors")
 
             self.stdout.write('Initializing Chrome driver...')
             driver = webdriver.Chrome(options=chrome_options)
@@ -43,14 +47,28 @@ class Command(BaseCommand):
                 driver.get(url)
                 self.stdout.write('Page loaded, waiting for content...')
 
-                # Wait for Leaflet map to load
-                time.sleep(10)  # Wait for Leaflet to fully load
-
-                # Wait for content div
+                # Wait for content div first
                 WebDriverWait(driver, 20).until(
                     EC.presence_of_element_located((By.ID, "content"))
                 )
                 self.stdout.write('Content div found!')
+
+                # Wait for Leaflet map tiles to load
+                self.stdout.write('Waiting for Leaflet map tiles...')
+                
+                # Wait for map container
+                WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located((By.ID, "map"))
+                )
+                
+                # Wait for Leaflet tiles to load (look for tile images)
+                WebDriverWait(driver, 30).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".leaflet-tile-loaded"))
+                )
+                
+                # Additional wait to ensure all tiles are loaded
+                time.sleep(5)
+                self.stdout.write('Map tiles loaded!')
 
                 # Take screenshot
                 element = driver.find_element(By.ID, "content")
