@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Family GPS Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">Family GPS Tracker</h1>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Family Members Online</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for location in locations %}
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2">{{ location.user.first_name|first|upper|default:location.user.username|first|upper }}</span>
+                                <strong>{{ location.user.first_name|default:location.user.username }}:</strong>&nbsp;{{ location.latitude|floatformat:4 }}, {{ location.longitude|floatformat:4 }}
+                                <small class="text-muted ms-2">({{ location.timestamp|timesince }} ago)</small>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="text-muted">No family members online yet. Start OwnTracks to see locations!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize the map centered on Denmark
+    var map = L.map('map').setView([55.6761, 12.5683], 7);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Custom icons for family members
+    var momIcon = L.divIcon({
+        html: '<div style="background-color: #ff69b4; color: white; border-radius: 50%; width: 25px; height: 25px; text-align: center; line-height: 25px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">M</div>',
+        iconSize: [25, 25],
+        className: 'custom-div-icon'
+    });
+
+    var dadIcon = L.divIcon({
+        html: '<div style="background-color: #0d6efd; color: white; border-radius: 50%; width: 25px; height: 25px; text-align: center; line-height: 25px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">D</div>',
+        iconSize: [25, 25],
+        className: 'custom-div-icon'
+    });
+
+    // Real family member locations from database
+    var familyMembers = [
+        {% for location in locations %}
+        {
+            name: "{{ location.user.first_name|default:location.user.username }}",
+            lat: {{ location.latitude }},
+            lng: {{ location.longitude }},
+            location: "{{ location.latitude|floatformat:4 }}, {{ location.longitude|floatformat:4 }}",
+            lastSeen: "{{ location.timestamp|timesince }} ago",
+            accuracy: {{ location.accuracy|default:0 }},
+            battery: {{ location.battery|default:0 }},
+            icon: {% cycle 'momIcon' 'dadIcon' %}
+        }{% if not forloop.last %},{% endif %}
+        {% empty %}
+        // No locations yet - show default Denmark view
+        {% endfor %}
+    ];
+
+    // Add markers for each family member
+    familyMembers.forEach(function(member) {
+        var marker = L.marker([member.lat, member.lng], {icon: member.icon}).addTo(map);
+        
+        marker.bindPopup(`
+            <div class="card" style="border: none; min-width: 200px;">
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-2">${member.name}</h6>
+                    <p class="card-text mb-1"><small><strong>Location:</strong> ${member.location}</small></p>
+                    <p class="card-text mb-1"><small><strong>Last seen:</strong> ${member.lastSeen}</small></p>
+                    <p class="card-text mb-1"><small><strong>Accuracy:</strong> ±${member.accuracy}m</small></p>
+                    ${member.battery > 0 ? `<p class="card-text mb-0"><small><strong>Battery:</strong> ${member.battery}%</small></p>` : ''}
+                </div>
+            </div>
+        `);
+    });
+
+    // Add a subtle circle around Denmark region
+    var denmarkCircle = L.circle([55.6761, 12.5683], {
+        color: '#0d6efd',
+        fillColor: '#cfe2ff',
+        fillOpacity: 0.1,
+        radius: 200000,
+        weight: 2
+    }).addTo(map);
+</script>
+{% endblock %}
