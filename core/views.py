@@ -61,51 +61,26 @@ def owntracks_api(request):
 
 
 def screenshot_bmp(request):
-    """Generate a BMP screenshot of the #content div"""
-    from django.conf import settings
-    from django.urls import reverse
-    import time
+    """Serve the latest screenshot as BMP"""
+    from .models import Screenshot
     
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=480,800")
-
-    driver = webdriver.Chrome(options=chrome_options)
-
-    if settings.DEBUG:
-        protocol = "http"
-        current_site = "127.0.0.1:8000"
-    else:
-        protocol = 'https'
-        current_site = "patronum.eu.pythonanywhere.com"
-    
-    url = f"{protocol}://{current_site}/"
-
     try:
-        driver.get(url)
-
-        time.sleep(2)  # Let Leaflet map load
-
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "content"))
-        )
-
-        element = driver.find_element(By.ID, "content")
-        element_screenshot = element.screenshot_as_png
-        image = Image.open(io.BytesIO(element_screenshot))
-
-        output = io.BytesIO()
-        image.save(output, format="BMP")
-        output.seek(0)
-
-        response = HttpResponse(output.getvalue(), content_type='image/bmp')
-        response['Content-Disposition'] = 'attachment; filename="family-tracker.bmp"'
-        return response
-
+        # Get the latest screenshot
+        screenshot = Screenshot.objects.first()
+        
+        if not screenshot:
+            return HttpResponse("No screenshot available. Run: python manage.py generate_screenshot", status=404)
+        
+        # Convert the stored image to BMP if needed
+        with screenshot.image.open('rb') as img_file:
+            image = Image.open(img_file)
+            output = io.BytesIO()
+            image.save(output, format="BMP")
+            output.seek(0)
+            
+            response = HttpResponse(output.getvalue(), content_type='image/bmp')
+            response['Content-Disposition'] = 'attachment; filename="family-tracker.bmp"'
+            return response
+    
     except Exception as e:
-        return HttpResponse(f"Error: {str(e)}", status=500)
-
-    finally:
-        driver.quit()
+        return HttpResponse(f"Error serving screenshot: {str(e)}", status=500)

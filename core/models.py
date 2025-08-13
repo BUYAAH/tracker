@@ -15,3 +15,14 @@ class Location(models.Model):
         
     def __str__(self):
         return f"{self.user.username} - {self.latitude}, {self.longitude} at {self.timestamp}"
+
+
+class Screenshot(models.Model):
+    image = models.ImageField(upload_to='screenshots/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"Screenshot {self.created_at}"
