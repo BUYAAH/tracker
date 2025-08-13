@@ -18,20 +18,20 @@ class Command(BaseCommand):
         self.stdout.write('Starting screenshot generation...')
         
         try:
-            # Chrome options for PythonAnywhere
+            # Chrome options for PythonAnywhere with better rendering
             chrome_options = webdriver.ChromeOptions()
-            chrome_options.add_argument("--headless")  # Must be headless on PythonAnywhere
+            chrome_options.add_argument("--headless=new")  # Use new headless mode
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--enable-gpu")  # Enable GPU for map rendering
             chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--disable-plugins")
-            chrome_options.add_argument("--remote-debugging-port=9222")
             chrome_options.add_argument("--window-size=480,800")
-            chrome_options.add_argument("--single-process")
             chrome_options.add_argument("--disable-web-security")
             chrome_options.add_argument("--allow-running-insecure-content")
             chrome_options.add_argument("--ignore-certificate-errors")
+            chrome_options.add_argument("--enable-logging")
+            chrome_options.add_argument("--log-level=0")
             chrome_options.binary_location = "/usr/bin/chromium"  # PythonAnywhere path
 
             self.stdout.write('Initializing Chrome driver...')
@@ -68,9 +68,33 @@ class Command(BaseCommand):
                 except:
                     self.stdout.write('Leaflet container not found, continuing anyway...')
                 
+                # Check for JavaScript errors
+                self.stdout.write('Checking for JavaScript errors...')
+                js_errors = driver.get_log('browser')
+                if js_errors:
+                    for error in js_errors:
+                        self.stdout.write(f"JS Error: {error['level']} - {error['message']}")
+                else:
+                    self.stdout.write('No JavaScript errors found.')
+                
+                # Check if Leaflet is loaded
+                leaflet_loaded = driver.execute_script("return typeof L !== 'undefined';")
+                self.stdout.write(f'Leaflet loaded: {leaflet_loaded}')
+                
+                # Check if map exists
+                map_exists = driver.execute_script("return document.getElementById('map') !== null;")
+                self.stdout.write(f'Map element exists: {map_exists}')
+                
                 # Give time for map and tiles to load
                 self.stdout.write('Waiting for map to fully load...')
                 time.sleep(15)
+                
+                # Final JS error check
+                final_errors = driver.get_log('browser')
+                if final_errors and len(final_errors) > len(js_errors):
+                    for error in final_errors[len(js_errors):]:
+                        self.stdout.write(f"Late JS Error: {error['level']} - {error['message']}")
+                
                 self.stdout.write('Proceeding with screenshot!')
 
                 # Take screenshot
