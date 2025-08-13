@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 self.stdout.write('Page loaded, waiting for content...')
 
                 # Wait for Leaflet map to load
-                time.sleep(5)  # Longer wait for debugging
+                time.sleep(10)  # Wait for Leaflet to fully load
 
                 # Wait for content div
                 WebDriverWait(driver, 20).until(
@@ -65,17 +65,27 @@ class Command(BaseCommand):
 
                 # Save to model
                 screenshot = Screenshot()
+                filename = f'family-tracker-{int(time.time())}.bmp'
                 screenshot.image.save(
-                    'family-tracker.bmp',
+                    filename,
                     ContentFile(output.getvalue()),
-                    save=True
+                    save=False  # Don't save the model yet
                 )
+                screenshot.save()  # Now save the model
                 
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Screenshot saved successfully! ID: {screenshot.id}'
+                        f'Screenshot saved successfully! ID: {screenshot.id}, File: {screenshot.image.name}'
                     )
                 )
+                
+                # Verify file exists
+                import os
+                full_path = screenshot.image.path
+                if os.path.exists(full_path):
+                    self.stdout.write(f'File confirmed at: {full_path}')
+                else:
+                    self.stdout.write(self.style.WARNING(f'File NOT found at: {full_path}'))
 
             finally:
                 driver.quit()
