@@ -7,15 +7,12 @@
     <!-- Family Members Status - Top 300px -->
     <div style="height: 300px; padding: 20px; background-color: white; border-radius: 8px; margin-bottom: 10px; border: 1px solid #dee2e6;">
         {% for location in locations %}
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex align-items-center">
-                <span class="badge bg-primary me-3" style="font-size: 14px;">{{ location.user.first_name|first|upper|default:location.user.username|first|upper }}</span>
-                <strong style="font-size: 18px;">{{ location.user.first_name|default:location.user.username }}</strong>
-            </div>
-            <small class="text-muted" style="font-size: 14px;">{{ location.timestamp|timesince }} ago</small>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <strong style="font-size: 24px;">{{ location.user.first_name|default:location.user.username }}</strong>
+            <span style="font-size: 18px; color: black;">{{ location.timestamp|timesince }} ago</span>
         </div>
         {% empty %}
-        <p class="text-muted text-center mt-5" style="font-size: 16px;">No family members online yet.<br>Start OwnTracks to see locations!</p>
+        <p class="text-muted text-center mt-5" style="font-size: 20px;">No family members online yet.<br>Start OwnTracks to see locations!</p>
         {% endfor %}
     </div>
     
