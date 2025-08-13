@@ -33,5 +33,5 @@ Thumbs.db
 .env.production
 
 # Static files (will be generated)
+collectstatic/
 staticfiles/
-static/collected/
