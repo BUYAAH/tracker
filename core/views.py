@@ -62,53 +62,50 @@ def owntracks_api(request):
 
 def screenshot_bmp(request):
     """Generate a BMP screenshot of the #content div"""
+    from django.conf import settings
+    from django.urls import reverse
+    import time
+    
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=480,800")
+
+    driver = webdriver.Chrome(options=chrome_options)
+
+    if settings.DEBUG:
+        protocol = "http"
+        current_site = "127.0.0.1:8000"
+    else:
+        protocol = 'https'
+        current_site = "patronum.eu.pythonanywhere.com"
+    
+    url = f"{protocol}://{current_site}/"
+
     try:
-        # Chrome options for headless browsing
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=480,800")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        
-        # Initialize Chrome driver
-        driver = webdriver.Chrome(options=chrome_options)
-        
-        try:
-            # Get the full URL for the map page
-            map_url = request.build_absolute_uri('/')
-            
-            # Load the page
-            driver.get(map_url)
-            
-            # Wait for the content div to be present
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.ID, "content"))
-            )
-            
-            # Wait a bit more for Leaflet map to load
-            import time
-            time.sleep(3)
-            
-            # Find the content div and take screenshot
-            content_element = driver.find_element(By.ID, "content")
-            screenshot_png = content_element.screenshot_as_png
-            
-            # Convert PNG to BMP using PIL
-            png_image = Image.open(io.BytesIO(screenshot_png))
-            
-            # Create BMP in memory
-            bmp_buffer = io.BytesIO()
-            png_image.save(bmp_buffer, format='BMP')
-            bmp_data = bmp_buffer.getvalue()
-            
-            # Return BMP as HTTP response
-            response = HttpResponse(bmp_data, content_type='image/bmp')
-            response['Content-Disposition'] = 'attachment; filename="family-tracker.bmp"'
-            return response
-            
-        finally:
-            driver.quit()
-            
+        driver.get(url)
+
+        time.sleep(2)  # Let Leaflet map load
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "content"))
+        )
+
+        element = driver.find_element(By.ID, "content")
+        element_screenshot = element.screenshot_as_png
+        image = Image.open(io.BytesIO(element_screenshot))
+
+        output = io.BytesIO()
+        image.save(output, format="BMP")
+        output.seek(0)
+
+        response = HttpResponse(output.getvalue(), content_type='image/bmp')
+        response['Content-Disposition'] = 'attachment; filename="family-tracker.bmp"'
+        return response
+
     except Exception as e:
-        return HttpResponse(f"Screenshot failed: {str(e)}", status=500)
+        return HttpResponse(f"Error: {str(e)}", status=500)
+
+    finally:
+        driver.quit()
