@@ -18,10 +18,10 @@ class Command(BaseCommand):
         self.stdout.write('Starting screenshot generation...')
         
         try:
-            # Chrome options for headless browsing
+            # Chrome options for visible browsing (debugging)
             chrome_options = webdriver.ChromeOptions()
             chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--headless")
+            # chrome_options.add_argument("--headless")  # Commented out for debugging
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=480,800")
             chrome_options.add_argument("--disable-dev-shm-usage")
@@ -32,15 +32,8 @@ class Command(BaseCommand):
             self.stdout.write('Initializing Chrome driver...')
             driver = webdriver.Chrome(options=chrome_options)
 
-            # Determine URL based on environment
-            if settings.DEBUG:
-                protocol = "http"
-                current_site = "127.0.0.1:8000"
-            else:
-                protocol = 'https'
-                current_site = "patronum.eu.pythonanywhere.com"
-            
-            url = f"{protocol}://{current_site}/"
+            # Always use production URL
+            url = "https://patronum.eu.pythonanywhere.com/"
             self.stdout.write(f'Loading URL: {url}')
 
             try:
