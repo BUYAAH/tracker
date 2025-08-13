@@ -51,22 +51,27 @@ class Command(BaseCommand):
                 )
                 self.stdout.write('Content div found!')
 
-                # Wait for Leaflet map tiles to load
-                self.stdout.write('Waiting for Leaflet map tiles...')
-                
                 # Wait for map container
+                self.stdout.write('Waiting for map container...')
                 WebDriverWait(driver, 20).until(
                     EC.presence_of_element_located((By.ID, "map"))
                 )
+                self.stdout.write('Map container found!')
                 
-                # Wait for Leaflet tiles to load (look for tile images)
-                WebDriverWait(driver, 30).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, ".leaflet-tile-loaded"))
-                )
+                # Try to wait for Leaflet map initialization
+                try:
+                    # Look for any Leaflet elements (more flexible)
+                    WebDriverWait(driver, 15).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, ".leaflet-container"))
+                    )
+                    self.stdout.write('Leaflet container found!')
+                except:
+                    self.stdout.write('Leaflet container not found, continuing anyway...')
                 
-                # Additional wait to ensure all tiles are loaded
-                time.sleep(5)
-                self.stdout.write('Map tiles loaded!')
+                # Give time for map and tiles to load
+                self.stdout.write('Waiting for map to fully load...')
+                time.sleep(15)
+                self.stdout.write('Proceeding with screenshot!')
 
                 # Take screenshot
                 element = driver.find_element(By.ID, "content")
