@@ -18,16 +18,21 @@ class Command(BaseCommand):
         self.stdout.write('Starting screenshot generation...')
         
         try:
-            # Chrome options for visible browsing (debugging)
+            # Chrome options for PythonAnywhere
             chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument("--headless")  # Must be headless on PythonAnywhere
             chrome_options.add_argument("--no-sandbox")
-            # chrome_options.add_argument("--headless")  # Commented out for debugging
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=480,800")
             chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-plugins")
+            chrome_options.add_argument("--remote-debugging-port=9222")
+            chrome_options.add_argument("--window-size=480,800")
+            chrome_options.add_argument("--single-process")
             chrome_options.add_argument("--disable-web-security")
             chrome_options.add_argument("--allow-running-insecure-content")
             chrome_options.add_argument("--ignore-certificate-errors")
+            chrome_options.binary_location = "/usr/bin/chromium"  # PythonAnywhere path
 
             self.stdout.write('Initializing Chrome driver...')
             driver = webdriver.Chrome(options=chrome_options)
